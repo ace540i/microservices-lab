@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-script
+  namespace: microservices-lab
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        text VARCHAR(255) NOT NULL
+    );
+
+    -- Insert 50 rows
+    DO $$
+    BEGIN
+      FOR i IN 1..50 LOOP
+        INSERT INTO messages (text) VALUES (concat('Hello message #', i));
+      END LOOP;
+    END;
+    $$;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: microservices-lab
+  labels:
+    app: postgres
+    service: db
+spec:
+  ports:
+  - port: 5432
+    name: postgres
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: microservices-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: postgres
+        version: v1
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "labuser"
+        - name: POSTGRES_PASSWORD
+          value: "labpass"
+        - name: POSTGRES_DB
+          value: "labdb"
+        volumeMounts:
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: init-script
+        configMap:
+          name: db-init-script

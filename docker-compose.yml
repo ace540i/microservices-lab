@@ -1,9 +1,12 @@
-version: '3.8'
+# version: '3.8'
 services:
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 
@@ -24,3 +27,8 @@ services:
       - "5432:5432"
     volumes:
     - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  random-words:
+    build: ./random-words
+    container_name: random-words
+    ports:
+      - "4000:4000"

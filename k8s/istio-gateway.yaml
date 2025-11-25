@@ -1,0 +1,88 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: microservices-gateway
+  namespace: microservices-lab
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: frontend
+  namespace: microservices-lab
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - microservices-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/"
+    route:
+    - destination:
+        host: frontend
+        port:
+          number: 3000
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: backend
+  namespace: microservices-lab
+spec:
+  hosts:
+  - backend
+  http:
+  - match:
+    - uri:
+        prefix: "/api"
+    route:
+    - destination:
+        host: backend
+        port:
+          number: 5000
+        subset: v1
+      weight: 100
+    timeout: 10s
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+  - match:
+    - uri:
+        prefix: "/messages"
+    route:
+    - destination:
+        host: backend
+        port:
+          number: 5000
+        subset: v1
+      weight: 100
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: random-words
+  namespace: microservices-lab
+spec:
+  hosts:
+  - random-words
+  http:
+  - route:
+    - destination:
+        host: random-words
+        port:
+          number: 4000
+        subset: v1
+      weight: 100
+    timeout: 5s

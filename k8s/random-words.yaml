@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: random-words
+  namespace: microservices-lab
+  labels:
+    app: random-words
+    service: random-words
+spec:
+  ports:
+  - port: 4000
+    name: http
+  selector:
+    app: random-words
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: random-words
+  namespace: microservices-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: random-words
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: random-words
+        version: v1
+    spec:
+      containers:
+      - name: random-words
+        image: microservices-lab-random-words:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4000
